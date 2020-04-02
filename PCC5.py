@@ -8,3 +8,5 @@ Joshua Ortiz
 import pandas as pd
 
 df = pd.read_csv("Bread Composition.csv")
+
+## Statistical Cleanup and Visualization
