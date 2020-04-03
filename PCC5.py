@@ -33,5 +33,3 @@ df.loc[:,significantFactors].hist(figsize=(15,15))
 
 # Plot significant factors against quality to verify trends exist
 qualityMeans.loc[:,significantFactors].plot.line(figsize=(15,15),subplots=True)
-
-# Check if merge works
