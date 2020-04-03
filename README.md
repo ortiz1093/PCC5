@@ -12,10 +12,10 @@ Spain Local Train Transportation: Spain Rail Transportation.csv
 1.	Create a statistical summary of the data set
 2.	Create a plot to show what is the average time between ORIGIN and DESTINATION
 3.	Group all the data per month, per week. Make a plot to display:
-  1.	The Number of tickets bought
-  2.	The Trend of the average travel time 
-  3.	The Trend of the price
-  4.	A bar plot to see the distribution of destination, train type, train class, and fare.
+    1.	The Number of tickets bought
+    2.	The Trend of the average travel time 
+    3.	The Trend of the price
+    4.	A bar plot to see the distribution of destination, train type, train class, and fare.
 4.	Evaluate and compare SVM, DT, and RF, to determine what fare will paid, based on the feature you consider relevant. Which one of these three methods gives the best result? What are the best parameters for each algorithm?
 5.	Perform a sensitivity analysis on the effects of training % vs. testing %
 6.	Make a summary results table showing the accuracy score, confusion matrix, and classification report for the methods compared.
