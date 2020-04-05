@@ -16,12 +16,15 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from numpy.random import random_sample
 
 # For visualization
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Read in data
+#%%  Read in data
 df = pd.read_csv("Bread Composition.csv")
 
 
@@ -88,7 +91,6 @@ y = np.array(df.quality);
 exp=0
 svc_model = svm.SVC(C=2**exp,gamma=2**exp,kernel='rbf',decision_function_shape='ovo',random_state=42)
 print(cross_val_score(svc_model, X, y,cv=10,scoring='accuracy').mean())
-print(scores.mean())
 
 #val_range=2.0**np.array(range(0,6))
 #param_grid = dict(C=val_range,gamma=val_range)
@@ -130,15 +132,125 @@ for sz in sz_range:
 	AVG_scores.append(np.mean([S,D,R]))
 
 # Line plots of each model's accuracy score as the size of the test set increases
+fig = plt.figure()
 plt.plot(sz_range,SVC_scores,'b',label='SVC')
 plt.plot(sz_range,DT_scores,'r',label='DT')
 plt.plot(sz_range,RF_scores,'g',label='RF')
 plt.plot(sz_range,AVG_scores,'k',label='AVG')
 plt.show()
+plt.close(fig)
 
 # Box plots of accuracy scores for each model across the train/test proportions
 box_x = ['SVC','DT','RF','AVG']
 box_y = [SVC_scores,DT_scores,RF_scores,AVG_scores]
 sns.boxplot(x=box_x,y=box_y)
 
-#%%
+#%% Report Findings
+
+def print_confusion_matrix(confusion_matrix, class_names, figsize = (10,7), fontsize=14):
+    """Prints a confusion matrix, as returned by sklearn.metrics.confusion_matrix, as a heatmap.
+
+    Arguments
+    ---------
+    confusion_matrix: numpy.ndarray
+        The numpy.ndarray object returned from a call to sklearn.metrics.confusion_matrix.
+        Similarly constructed ndarrays can also be used.
+    class_names: list
+        An ordered list of class names, in the order they index the given confusion matrix.
+    figsize: tuple
+        A 2-long tuple, the first value determining the horizontal size of the ouputted figure,
+        the second determining the vertical size. Defaults to (10,7).
+    fontsize: int
+        Font size for axes labels. Defaults to 14.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        The resulting confusion matrix figure
+    """
+    df_cm = pd.DataFrame(
+        confusion_matrix, index=class_names, columns=class_names,
+    )
+    fig = plt.figure(figsize=figsize)
+    try:
+        heatmap = sns.heatmap(df_cm, annot=True, fmt="d")
+    except ValueError:
+        raise ValueError("Confusion matrix values must be integers.")
+    heatmap.yaxis.set_ticklabels(heatmap.yaxis.get_ticklabels(), rotation=0, ha='right', fontsize=fontsize)
+    heatmap.xaxis.set_ticklabels(heatmap.xaxis.get_ticklabels(), rotation=45, ha='right', fontsize=fontsize)
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    return fig
+
+def labeled_confusion(conf_matrix,labels):
+	if np.shape(conf_matrix)[0] != np.shape(conf_matrix)[1]:
+		print('Matrix not square; no action taken.')
+		return conf_matrix
+	elif len(labels) != np.shape(conf_matrix)[0]:
+		print('Incorrect number of labels; no action taken.')
+		return conf_matrix
+
+	pred_labels = [str(label)+'_pred' for label in labels]
+	true_labels = [str(label)+'_true' for label in labels]
+
+	lbl_conf = pd.DataFrame(conf_matrix)
+	lbl_conf.index = pd.Index(pred_labels)
+	lbl_conf.rename(columns=pd.Series(true_labels),inplace=True)
+	return lbl_conf
+
+labels = [3,4,5,6,7,8]
+# SVC
+y_pred = svc_model.predict(X_test)
+print('\n\nSupport Vector Classifier Report')
+print(classification_report(y_test,y_pred))
+print('\n\nSupport Vector Classifier Confusion Matrix')
+print(labeled_confusion(confusion_matrix(y_test,y_pred,labels=labels),labels))
+
+# DT
+y_pred = DT.predict(X_test)
+print('\n\nDecision Trees Classifier Report')
+print(classification_report(y_test,y_pred))
+print('\n\nDecision Trees Classifier Confusion Matrix')
+print(labeled_confusion(confusion_matrix(y_test,y_pred,labels=labels),labels))
+
+# RF
+y_pred = RF.predict(X_test)
+print('\n\nRandom Forest Classifier Report')
+print(classification_report(y_test,y_pred))
+print('\n\nRandom Forest Classifier Confusion Matrix')
+print(labeled_confusion(confusion_matrix(y_test,y_pred,labels=labels),labels))
+print()
+
+
+#%% Out-of-Sample Predictions
+
+# Create new df
+newData = pd.DataFrame()
+
+for factor in significantFactors:
+	minVal = min(df[factor])
+	maxVal = max(df[factor])
+	interval = maxVal - minVal
+	newVals = interval*random_sample((10,1)) + minVal
+	newData[factor] = newVals.flatten()
+
+X_new = newData.to_numpy()
+
+
+# Train models on full original dataset
+svc_model.fit(X,y)
+DT.fit(X,y)
+RF.fit(X,y)
+
+# Create predictions for new model
+scv_predictions = svc_model.predict(X_new)
+DT_predictions = DT.predict(X_new)
+RF_predictions = RF.predict(X_new)
+
+# Add predictions to new dataset and report
+DataPredictions = newData
+models = ['SVC','DT','RF']
+DataPredictions['SVC_Predictions']  = scv_predictions
+DataPredictions['DT_Predictions']  = DT_predictions
+DataPredictions['RF_Predictions']  = RF_predictions
+print(DataPredictions)
